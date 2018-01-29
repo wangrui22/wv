@@ -38,7 +38,8 @@ io.on('connection', function(socket){
     console.log('a user connected');
 
     //TCP client
-    let client = net.createConnection({host:imgServerHost, port:imgServerPort}, function() {
+    let client = new net.Socket();
+    client.connect(imgServerPort, imgServerHost, function() {
         console.log('connect image server success.');
     });
 
@@ -65,10 +66,7 @@ io.on('connection', function(socket){
     });
 
     socket.on('disconnect', function() {
-        //disconnect
-        let buffer = new Buffer(16);
-        buffer.writeIntLE(-1,0,4);
-        client.write(buffer);  
+        //disconnect  
         client.destroy();
     });
 });
