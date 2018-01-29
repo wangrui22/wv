@@ -10,17 +10,16 @@
 
 #include <boost/thread/thread.hpp>
 
-boost::mutex _mutex;
-
+//TODO 信息头的参数可以增加，但同时web端的解包也需要相应的修改MSG_HEADER_LEN大小
 struct Header {
-    int id;
-    int len;
-    int para0;
+    int id;//cmd id
+    int len;//package length
+    int para0;//web->server is page, server->web can be width
     int para1;
 };
 
 //----------------//
-//TODO
+//TODO 这里可以写CPU渲染+jpeg压缩的代码
 //----------------//
 inline char* get_buffer(int page, size_t* buffer_len) {
     FILE *f = NULL;
@@ -77,7 +76,7 @@ void client_runner(int client_fd) {
 
         //send image
         if (header.id == 1) {        
-            
+
             size_t len = 0;
             char* buffer = get_buffer(header.para0, &len);
             if (!buffer) {
