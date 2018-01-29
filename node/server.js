@@ -8,6 +8,16 @@ let http = require('http').Server(app);
 let io = require('socket.io')(http);
 http.listen(8080);
 
+let imgServerHost = '127.0.0.1';
+let imgServerPort = 8001;
+if(process.argv.length == 3) {
+    imgServerPort = process.argv[2];
+} else if (process.argv.length == 4) {
+    imgServerHost = process.argv[2];
+    imgServerPort = process.argv[3];
+}
+console.log('image server: ' + imgServerHost + ':' + imgServerPort);
+
 //web server
 app.engine('html', consolidate.ejs);
 app.set('views', './views');
@@ -27,17 +37,18 @@ router.get('/' , function(req,res) {
 io.on('connection', function(socket){
     console.log('a user connected');
 
-    let client = net.createConnection({host:"127.0.0.1", port:1234}, function() {
-        console.log('tcp connect success.');
+    //TCP client
+    let client = net.createConnection({host:imgServerHost, port:imgServerPort}, function() {
+        console.log('connect image server success.');
     });
 
     client.on('data', function(data){
-        console.log('data stream >>>>');
+        console.log('data stream >>>');
         socket.emit('data', data);
     });
     
     client.on('end', function(data){
-        console.log('close connection.');
+        console.log('disconnect image server connection success.');
     });
 
     socket.on('message', function(json) {
@@ -46,9 +57,18 @@ io.on('connection', function(socket){
         if (json.id == 1 ) {
             let buffer = new Buffer(16);
             buffer.writeIntLE(1,0,4);
+            buffer.writeIntLE(parseInt(json.page),8,4);
             client.write(buffer);
-            console.log('client write');
+            
+            console.log('request image');
         }
     });
-});
 
+    socket.on('disconnect', function() {
+        //disconnect
+        let buffer = new Buffer(16);
+        buffer.writeIntLE(-1,0,4);
+        client.write(buffer);  
+        client.destroy();
+    });
+});
